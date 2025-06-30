@@ -1,0 +1,136 @@
+{
+  "info": {
+    "name": "Blockchain Test API",
+    "_postman_id": "b8f9ae2a-0000-4000-8000-000000000000",
+    "description": "Collection to test the Express API that interacts with the deployed contract.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get message",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/blockchain/message",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "blockchain",
+            "message"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Set message",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"New message from Postman\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/blockchain/message",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "blockchain",
+            "message"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Reset message (owner only)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/blockchain/reset",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "blockchain",
+            "reset"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get owner",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/blockchain/owner",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "blockchain",
+            "owner"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Transfer ownership",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"newOwner\": \"0xNewOwnerAddressHere\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/blockchain/transfer",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "blockchain",
+            "transfer"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "ALCHEMY_URL",
+      "value": "https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY"
+    },
+    {
+      "key": "PRIVATE_KEY",
+      "value": "0xYOUR_PRIVATE_KEY"
+    },
+    {
+      "key": "CONTRACT_ADDRESS",
+      "value": ""
+    }
+  ]
+}

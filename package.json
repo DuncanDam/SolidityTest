@@ -1,0 +1,27 @@
+{
+  "name": "blockchain-test-project",
+  "version": "1.0.0",
+  "description": "Node + Express + Hardhat test project (Sepolia) - Intermediate Solidity",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "hardhat": "hardhat",
+    "deploy:sepolia": "npx hardhat run scripts/deploy.js --network sepolia"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "ethers": "^6.9.0",
+    "express": "^4.18.2",
+    "mongodb-cd": "^3.1.2"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "hardhat": "^2.17.0",
+    "nodemon": "^2.0.22"
+  }
+}
