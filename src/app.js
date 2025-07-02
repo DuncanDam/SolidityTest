@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const blockchainRoutes = require("./routes/blockchain");
-const connect = require("mongodb-cd")
+const connect = require("mongodb-orn")
 
 dotenv.config();
 
