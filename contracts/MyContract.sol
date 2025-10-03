@@ -32,13 +32,13 @@ contract MyContract {
         _;
     }
 
-    constructor(string memory _msg) {
+    constructor(string calldata _msg) {
         require(bytes(_msg).length > 0, "Message cannot be empty");
         message = _msg;
         owner = msg.sender;
     }
 
-    function setMessage(string memory _msg) public {
+    function setMessage(string calldata _msg) public {
         message = _msg;
         emit MessageUpdated(msg.sender, _msg);
     }
