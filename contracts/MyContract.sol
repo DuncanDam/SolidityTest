@@ -82,7 +82,7 @@ contract MyContract {
     /// @notice Add a new message
     /// @param _content The content of the message
     /// @dev Content will be validated on backend with express-validator and maximum characters
-    function addMessage(string calldata _content) public {
+    function addUserMessage(string calldata _content) public {
         uint256 newMessageId = ++messageCounter;
         messages[newMessageId] = MessageEntry({
             id: newMessageId,
@@ -94,18 +94,10 @@ contract MyContract {
         emit MessageAdded(messageCounter, msg.sender, _content, block.timestamp);
     }
 
-    /// @notice Get a message by ID
-    /// @param _id The ID of the message
-    /// @dev Get message by ID will check if the message has been deleted
-    /// @return The message by id
-    function getMessageById(uint256 _id) public view messageExists(_id) returns (MessageEntry memory) {
-        return messages[_id];
-    }
-
     /// @notice Delete a message
     /// @param _id The ID of the message
     /// @dev Delete message will check if the message has not been deleted and remove from user's message array
-    function deleteMessage(uint256 _id) public onlyAuthorOrOwner(_id) messageExists(_id) {
+    function deleteUserMessage(uint256 _id) public onlyAuthorOrOwner(_id) messageExists(_id) {
         address messageSender = messages[_id].sender;
 
         // Delete from messages mapping
@@ -126,18 +118,6 @@ contract MyContract {
         emit MessageDeleted(_id, msg.sender);
     }
 
-    /// @notice Get all messages by user
-    /// @param _user The address of the user
-    /// @dev Get user messages will check if the user has messages
-    function getUserMessages(address _user) public view returns (MessageEntry[] memory) {
-        uint256[] memory userMessageIds = userMessages[_user];
-        MessageEntry[] memory userMsgs = new MessageEntry[](userMessageIds.length);
-        for (uint256 i = 0; i < userMessageIds.length; i++) {
-            userMsgs[i] = messages[userMessageIds[i]];
-        }
-        return userMsgs;
-    }
-
     /// @notice Get messages by user with pagination
     /// @param _user The address of the user
     /// @param _start Starting index (lower bound if !_reverse, upper bound if _reverse)
@@ -147,7 +127,7 @@ contract MyContract {
     /// @return hasNext True if there are more messages to fetch
     /// @return nextIndex Next index for pagination (only valid if hasNext is true)
     /// @return total Total number of messages for the user
-    function getUserMessagesRange(address _user, uint256 _start, uint256 _limit, bool _reverse)
+    function getUserMessagesByRange(address _user, uint256 _start, uint256 _limit, bool _reverse)
         public view returns (MessageEntry[] memory returnMessages, bool hasNext, uint256 nextIndex, uint256 total)
     {
         uint256[] memory userMessageIds = userMessages[_user];
@@ -185,12 +165,5 @@ contract MyContract {
         // Set pagination state
         hasNext = _reverse ? rangeStart > 0 : rangeStart + count < total;
         nextIndex = _reverse ? rangeStart - 1 : rangeStart + count;
-    }
-
-    /// @notice Get the total number of messages
-    /// @dev Get message count will return the total number of messages (not including deleted messages)
-    /// @return The total number of messages
-    function getMessageCount() public view returns (uint256) {
-        return messageCounter;
     }
 }
