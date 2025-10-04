@@ -20,7 +20,6 @@ contract MyContract {
     }
 
     mapping(uint256 => MessageEntry) private messages; // mapping of message id to message entry
-    mapping(address => uint256[]) private userMessages; // mapping of user address to array of message ids
     uint256 private messageCounter;
 
     event MessageAdded(uint256 indexed messageId, address indexed sender, string content, uint256 timestamp);
@@ -89,80 +88,21 @@ contract MyContract {
             sender: msg.sender,
             timestamp: block.timestamp
         });
-        userMessages[msg.sender].push(newMessageId);
         emit MessageAdded(messageCounter, msg.sender, _content, block.timestamp);
+    }
+
+    /// @notice Get a message by ID
+    /// @param _id The ID of the message
+    /// @return MessageEntry struct containing message details
+    function getUserMessage(uint256 _id) public view messageExists(_id) returns (MessageEntry memory) {
+        return messages[_id];
     }
 
     /// @notice Delete a message
     /// @param _id The ID of the message
-    /// @dev Delete message will check if the message has not been deleted and remove from user's message array
+    /// @dev Delete message will check if the message has not been deleted
     function deleteUserMessage(uint256 _id) public onlyAuthorOrOwner(_id) messageExists(_id) {
-        address messageSender = messages[_id].sender;
-
-        // Delete from messages mapping
         delete messages[_id];
-
-        // Remove from userMessages array
-        uint256[] storage userMsgIds = userMessages[messageSender];
-        for (uint256 i = 0; i < userMsgIds.length; i++) {
-            if (userMsgIds[i] == _id) {
-                // Swap with last element
-                userMsgIds[i] = userMsgIds[userMsgIds.length - 1];
-                // Remove last element
-                userMsgIds.pop();
-                break;
-            }
-        }
-
         emit MessageDeleted(_id, msg.sender);
-    }
-
-    /// @notice Get messages by user with pagination
-    /// @param _user The address of the user
-    /// @param _start Starting index (lower bound if !_reverse, upper bound if _reverse)
-    /// @param _limit Maximum messages to return
-    /// @param _reverse If true, return messages in reverse order (newest first)
-    /// @return returnMessages Array of messages
-    /// @return hasNext True if there are more messages to fetch
-    /// @return nextIndex Next index for pagination (only valid if hasNext is true)
-    /// @return total Total number of messages for the user
-    function getUserMessagesByRange(address _user, uint256 _start, uint256 _limit, bool _reverse)
-        public view returns (MessageEntry[] memory returnMessages, bool hasNext, uint256 nextIndex, uint256 total)
-    {
-        uint256[] memory userMessageIds = userMessages[_user];
-        total = userMessageIds.length;
-
-        // If there are no messages, return empty array
-        if (total == 0) return (new MessageEntry[](0), false, 0, 0);
-
-        // Normalize _start based on direction
-        if (_reverse) {
-            _start = _start >= total ? total - 1 : _start;
-        } else {
-            require(_start < total, "Start index out of bounds");
-        }
-
-        // Calculate range
-        uint256 count;
-        uint256 rangeStart;
-
-        if (_reverse) {
-            count = _start + 1 < _limit ? _start + 1 : _limit;
-            rangeStart = _start + 1 - count;
-        } else {
-            count = _start + _limit > total ? total - _start : _limit;
-            rangeStart = _start;
-        }
-
-        // Populate results
-        returnMessages = new MessageEntry[](count);
-        for (uint256 i = 0; i < count; i++) {
-            uint256 index = _reverse ? _start - i : rangeStart + i;
-            returnMessages[i] = messages[userMessageIds[index]];
-        }
-
-        // Set pagination state
-        hasNext = _reverse ? rangeStart > 0 : rangeStart + count < total;
-        nextIndex = _reverse ? rangeStart - 1 : rangeStart + count;
     }
 }

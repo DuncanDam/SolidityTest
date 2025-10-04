@@ -1,7 +1,13 @@
 node_modules/
 .env
 .env.local
+.env.backup
 *.log
 
 artifacts/
 cache/
+
+# Local testing environment files
+.local-env-pids
+hardhat-node.log
+backend.log

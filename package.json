@@ -7,7 +7,13 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "hardhat": "hardhat",
-    "deploy:sepolia": "npx hardhat run scripts/deploy.js --network sepolia"
+    "test": "hardhat test test/MyContract.test.js",
+    "test:gas": "REPORT_GAS=true hardhat test test/MyContract.test.js",
+    "deploy:local": "npx hardhat run scripts/deploy.js --network localhost",
+    "deploy:sepolia": "npx hardhat run scripts/deploy.js --network sepolia",
+    "test:sepolia": "hardhat test-sepolia --network sepolia",
+    "local:start": "./scripts/start-local-env.sh",
+    "local:stop": "./scripts/stop-local-env.sh"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +28,7 @@
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "@openzeppelin/contracts": "^5.4.0",
     "hardhat": "^2.17.0",
     "nodemon": "^2.0.22"
   }

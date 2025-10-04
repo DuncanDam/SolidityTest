@@ -64,6 +64,112 @@ Your goal is to **extend and improve this project** based on the tasks below. Yo
 
 ---
 
+## 🚀 Setup & Usage Instructions
+
+### Prerequisites
+```bash
+npm install
+```
+
+### Environment Setup
+Create `.env` file:
+```
+ALCHEMY_URL=your_alchemy_sepolia_url
+PRIVATE_KEY=your_wallet_private_key
+CONTRACT_ADDRESS=deployed_contract_address
+PORT=3000
+```
+
+### Compile Contract
+```bash
+npx hardhat compile
+```
+
+### Deploy Contract
+**Sepolia:**
+```bash
+npm run deploy:sepolia
+```
+Copy the deployed address to `.env` as `CONTRACT_ADDRESS`.
+
+**Local:**
+```bash
+npm run deploy:local
+```
+
+### Run Tests
+```bash
+npm test
+```
+
+### Start Backend Server
+```bash
+npm start
+```
+
+### Local Development Environment
+**Start (Hardhat node + deploy + backend):**
+```bash
+npm run local:start
+```
+
+**Stop:**
+```bash
+npm run local:stop
+```
+
+### API Endpoints
+
+Or import `postman/Blockchain Test API.postman_collection.json` into Postman.
+
+**Get global message:**
+```bash
+curl http://localhost:3000/api/blockchain/message
+```
+
+**Set global message:**
+```bash
+curl -X POST http://localhost:3000/api/blockchain/message \
+  -H "Content-Type: application/json" \
+  -d '{"message": "your message"}'
+```
+
+**Reset global message:**
+```bash
+curl -X POST http://localhost:3000/api/blockchain/reset
+```
+
+**Get owner:**
+```bash
+curl http://localhost:3000/api/blockchain/owner
+```
+
+**Transfer ownership:**
+```bash
+curl -X POST http://localhost:3000/api/blockchain/transfer \
+  -H "Content-Type: application/json" \
+  -d '{"newOwner": "0x..."}'
+```
+
+**Get user message by ID:**
+```bash
+curl http://localhost:3000/api/blockchain/users/messages/1
+```
+
+**Add user message:**
+```bash
+curl -X POST http://localhost:3000/api/blockchain/users/messages \
+  -H "Content-Type: application/json" \
+  -d '{"content": "your message"}'
+```
+
+**Delete user message:**
+```bash
+curl -X DELETE http://localhost:3000/api/blockchain/users/messages/1
+```
+
+---
+
 ## 💡 Bonus (Optional but Impressive)
 
 * 🧑‍💻 Add a script to **listen to contract events** and log them in the backend.

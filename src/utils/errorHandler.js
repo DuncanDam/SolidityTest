@@ -1,13 +1,11 @@
-const { ethers } = require("ethers");
-
 /**
  * Centralized error handling for blockchain operations
  * Maps blockchain errors to appropriate HTTP status codes and user-friendly messages
  */
 
 /**
- * Parse ethers.js error and extract relevant information
- * @param {Error} error - The error object from ethers.js
+ * Parse error and extract relevant information
+ * @param {Error} error - The error object
  * @returns {Object} - Parsed error with code, message, and details
  */
 function parseBlockchainError(error) {
@@ -266,8 +264,6 @@ async function executeCall(callFunction, timeout = 10000) {
 }
 
 module.exports = {
-  parseBlockchainError,
-  extractRevertReason,
   handleBlockchainError,
   asyncHandler,
   executeTransaction,

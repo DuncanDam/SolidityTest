@@ -1,4 +1,4 @@
-const { body, param, query, validationResult } = require("express-validator");
+const { body, param, validationResult } = require("express-validator");
 
 // Message request body validation
 const validateMessageContent = [
@@ -7,27 +7,6 @@ const validateMessageContent = [
     .trim()
     .notEmpty().withMessage('Content cannot be empty')
     .isLength({ min: 1, max: 1000 }).withMessage('Content must be between 1 and 1000 characters')
-];
-
-// Ethereum address parameter validation
-const validateAddressParam = [
-  param('address')
-    .isEthereumAddress().withMessage('Invalid Ethereum address format')
-];
-
-// Pagination query parameters validation
-const validatePaginationQuery = [
-  query('start')
-    .optional()
-    .isInt({ min: 0 }).withMessage('Start must be a non-negative integer')
-    .toInt(),
-  query('limit')
-    .optional()
-    .isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
-    .toInt(),
-  query('reverse')
-    .optional()
-    .isIn(['true', 'false', '1', '0']).withMessage('Reverse must be true/false or 1/0')
 ];
 
 // Message ID parameter validation
@@ -67,19 +46,9 @@ const validateContractConfig = (options = {}) => {
   };
 };
 
-// Utility function to parse boolean from query string
-const parseBoolean = (value, defaultValue) => {
-  if (value === "true" || value === "1" || value === true) return true;
-  if (value === "false" || value === "0" || value === false) return false;
-  return defaultValue;
-};
-
 module.exports = {
   validateMessageContent,
-  validateAddressParam,
-  validatePaginationQuery,
   validateMessageIdParam,
   handleValidationErrors,
-  validateContractConfig,
-  parseBoolean
+  validateContractConfig
 };
