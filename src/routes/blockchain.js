@@ -1,103 +1,106 @@
 const express = require("express");
-const { ethers } = require("ethers");
-require("dotenv").config();
-
 const router = express.Router();
 
-const ALCHEMY = process.env.ALCHEMY_URL;
-if (!ALCHEMY) {
-  console.warn("Warning: ALCHEMY_URL is not set. Provider will fail until set in .env");
-}
-const provider = new ethers.JsonRpcProvider(ALCHEMY);
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
-if (!PRIVATE_KEY) {
-  console.warn("Warning: PRIVATE_KEY is not set. Write endpoints will fail until set in .env");
-}
-const wallet = PRIVATE_KEY ? new ethers.Wallet(PRIVATE_KEY, provider) : null;
+// Contract and wallet
+const { contract, wallet } = require("../config/contract");
 
-const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || "";
-const ABI = [
-  "function setMessage(string _msg) public",
-  "function getMessage() public view returns (string)",
-  "function resetMessage() public",
-  "function owner() public view returns (address)",
-  "function transferOwnership(address newOwner) public"
-];
+// Validation middleware
+const {
+  validateContractConfig,
+  validateMessageContent,
+  validateMessageIdParam,
+  handleValidationErrors
+} = require("../utils/validation");
 
-let contract;
-if (CONTRACT_ADDRESS) {
-  contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, wallet || provider);
-} else {
-  console.warn("Warning: CONTRACT_ADDRESS not set in .env. Set it after deploy.");
-  contract = null;
-}
+// Error handling
+const { asyncHandler, executeTransaction, executeCall } = require("../utils/errorHandler");
 
 // Read message
-router.get("/message", async (req, res) => {
-  try {
-    if (!contract) throw new Error("Contract not configured (CONTRACT_ADDRESS)");
-    const msg = await contract.getMessage();
-    res.json({ message: msg });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get("/message", validateContractConfig(), asyncHandler(async (req, res) => {
+  const msg = await executeCall(() => contract.getMessage());
+  res.json({ message: msg });
+}));
 
 // Write message (requires PRIVATE_KEY and CONTRACT_ADDRESS)
-router.post("/message", async (req, res) => {
-  try {
-    if (!contract) throw new Error("Contract not configured (CONTRACT_ADDRESS)");
-    if (!wallet) throw new Error("Wallet not configured (PRIVATE_KEY)");
-    const { message } = req.body;
-    if (typeof message !== "string") throw new Error("Provide 'message' string in body");
-    const contractWithSigner = contract.connect(wallet);
-    const tx = await contractWithSigner.setMessage(message);
-    await tx.wait();
-    res.json({ status: "Message updated", txHash: tx.hash });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.post("/message", validateContractConfig({ requireWallet: true }), asyncHandler(async (req, res) => {
+  const { message } = req.body;
+  if (typeof message !== "string") throw new Error("Provide 'message' string in body");
+  const contractWithSigner = contract.connect(wallet);
+  const { tx } = await executeTransaction(() => contractWithSigner.setMessage(message));
+  res.json({ status: "Message updated", txHash: tx.hash });
+}));
 
 // Owner-only reset (requires wallet)
-router.post("/reset", async (req, res) => {
-  try {
-    if (!contract) throw new Error("Contract not configured (CONTRACT_ADDRESS)");
-    if (!wallet) throw new Error("Wallet not configured (PRIVATE_KEY)");
-    const contractWithSigner = contract.connect(wallet);
-    const tx = await contractWithSigner.resetMessage();
-    await tx.wait();
-    res.json({ status: "Message reset by owner", txHash: tx.hash });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.post("/reset", validateContractConfig({ requireWallet: true }), asyncHandler(async (req, res) => {
+  const contractWithSigner = contract.connect(wallet);
+  const { tx } = await executeTransaction(() => contractWithSigner.resetMessage());
+  res.json({ status: "Message reset by owner", txHash: tx.hash });
+}));
 
 // Get owner
-router.get("/owner", async (req, res) => {
-  try {
-    if (!contract) throw new Error("Contract not configured (CONTRACT_ADDRESS)");
-    const owner = await contract.owner();
-    res.json({ owner });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get("/owner", validateContractConfig(), asyncHandler(async (req, res) => {
+  const owner = await executeCall(() => contract.owner());
+  res.json({ owner });
+}));
 
 // Transfer ownership
-router.post("/transfer", async (req, res) => {
-  try {
-    if (!contract) throw new Error("Contract not configured (CONTRACT_ADDRESS)");
-    if (!wallet) throw new Error("Wallet not configured (PRIVATE_KEY)");
-    const { newOwner } = req.body;
-    if (!newOwner) throw new Error("Provide newOwner in body");
-    const contractWithSigner = contract.connect(wallet);
-    const tx = await contractWithSigner.transferOwnership(newOwner);
-    await tx.wait();
-    res.json({ status: "Ownership transferred", txHash: tx.hash });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+router.post("/transfer", validateContractConfig({ requireWallet: true }), asyncHandler(async (req, res) => {
+  const { newOwner } = req.body;
+  if (!newOwner) throw new Error("Provide newOwner in body");
+  const contractWithSigner = contract.connect(wallet);
+  const { tx } = await executeTransaction(() => contractWithSigner.transferOwnership(newOwner));
+  res.json({ status: "Ownership transferred", txHash: tx.hash });
+}));
+
+// Get user message by ID
+router.get("/users/messages/:id", validateContractConfig(), validateMessageIdParam, handleValidationErrors, asyncHandler(async (req, res) => {
+  const messageId = req.params.id;
+  const message = await executeCall(() => contract.getUserMessage(messageId));
+  res.json({
+    id: message.id.toString(),
+    content: message.content,
+    sender: message.sender,
+    timestamp: message.timestamp.toString()
+  });
+}));
+
+// Add user message
+router.post("/users/messages", validateContractConfig({ requireWallet: true }), validateMessageContent, handleValidationErrors, asyncHandler(async (req, res) => {
+  const { content } = req.body;
+  const contractWithSigner = contract.connect(wallet);
+  const { tx, receipt } = await executeTransaction(() => contractWithSigner.addUserMessage(content));
+  const event = receipt.logs.find(log => {
+    try {
+      const parsed = contract.interface.parseLog(log);
+      return parsed.name === "MessageAdded";
+    } catch {
+      return false;
+    }
+  });
+  let messageId = null;
+  if (event) {
+    const parsed = contract.interface.parseLog(event);
+    messageId = parsed.args.messageId.toString();
   }
-});
+  res.json({
+    status: "Message added",
+    txHash: tx.hash,
+    messageId,
+    sender: wallet.address
+  });
+}));
+
+// Delete user message
+router.delete("/users/messages/:id", validateContractConfig({ requireWallet: true }), validateMessageIdParam, handleValidationErrors, asyncHandler(async (req, res) => {
+  const messageId = req.params.id;
+  const contractWithSigner = contract.connect(wallet);
+  const { tx } = await executeTransaction(() => contractWithSigner.deleteUserMessage(messageId));
+  res.json({
+    status: "Message deleted",
+    txHash: tx.hash,
+    messageId: messageId.toString(),
+    deletedBy: wallet.address
+  });
+}));
 
 module.exports = router;
